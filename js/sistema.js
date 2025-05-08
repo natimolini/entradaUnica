@@ -2,7 +2,6 @@
 
 // Base para requisições assíncronas (define a pasta onde estão os arquivos PHP)
 const apiBase = 'php';
-
 /**
  * Carrega dinamicamente opções em um elemento <select>.
  * @param {string} endpoint Nome do arquivo PHP (sem .php)
@@ -83,6 +82,55 @@ async function excluirConsulta(id) {
   return resp.ok;
 }
 
+async function carregarMedicos() {
+  const tabela = document.querySelector('#tabela-medicos tbody');
+  
+  if (!tabela) return;
+
+  try {
+    const resp = await fetch(`${apiBase}/medicos.php`);
+    const medicos = await resp.json();
+
+    console.log(medicos);
+    
+    tabela.innerHTML = '';
+    medicos.forEach(medico => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${medico.nome}</td>
+        <td>${medico.crm}</td>
+        <td>${medico.especialidade}</td>
+        <td><button class="btn-excluir" onclick="excluirMedicos(${medico.id})">Excluir</button></td>
+      `;
+      tabela.appendChild(tr);
+    });
+  } catch (err) {
+    console.error('Erro ao carregar médicos:', err);
+  }
+}
+
+async function excluirMedicos(id) {
+  const confirmar = confirm("Tem certeza que deseja excluir este médico?");
+  if (!confirmar) return;
+
+  try {
+    const resp = await fetch(`${apiBase}/medicos.php?id=${id}`, {
+      method: 'DELETE'
+    });
+
+    if (!resp.ok) {
+      throw new Error("Erro ao excluir médico.");
+    }
+
+    alert("Médico excluído com sucesso.");
+    carregarMedicos(); // Atualiza a tabela após exclusão
+  } catch (err) {
+    alert("Erro ao excluir médico.");
+    console.error(err);
+  }
+}
+
+
 /**
  * Carrega todos os pacientes na tabela da página de listagem.
  */
@@ -111,6 +159,28 @@ async function carregarPacientes() {
   }
 }
 
+async function carregarEspecilidade() {
+  const tabela = document.querySelector('#tabela-especialidades tbody');
+  if (!tabela) return;
+
+  try {
+    const resp = await fetch(`${apiBase}/especialidades.php`);
+    const especialidades = await resp.json();
+
+    tabela.innerHTML = '';
+    especialidades.forEach(especialidade => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${especialidade.nome}</td>
+        <td><button class="btn-excluir" onclick="excluirEspecialidade(${especialidade.id})">Excluir</button></td>
+      `;
+      tabela.appendChild(tr);
+    });
+  } catch (err) {
+    console.error('Erro ao carregar especialidades:', err);
+  }
+}
+
 /**
  * Exclui um paciente selecionado.
  */
@@ -126,6 +196,21 @@ async function excluirPaciente(id) {
     carregarPacientes();
   } else {
     alert('Erro ao excluir paciente.');
+  }
+}
+
+async function excluirEspecialidade(id) {
+  if (!confirm('Deseja realmente excluir esta especialidade?')) return;
+
+  const resp = await fetch(`${apiBase}/especialidades.php?id=${id}`, {
+    method: 'DELETE'
+  });
+
+  if (resp.ok) {
+    alert('Especialidade excluída com sucesso.');
+    carregarEspecialidade(); // Atualiza a tabela
+  } else {
+    alert('Erro ao excluir especialidade.');
   }
 }
 
@@ -226,6 +311,14 @@ window.addEventListener('DOMContentLoaded', () => {
 
   if (pagina.includes('pacientes.html')) {
     carregarPacientes();
+  }
+
+  if (pagina.includes('listagem-medicos.html')) {
+    carregarMedicos();
+  }
+
+  if (pagina.includes('listagem-especialidades.html')) {
+    carregarEspecialidades();
   }
 });
 
